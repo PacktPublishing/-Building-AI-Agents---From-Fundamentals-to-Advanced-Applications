@@ -1,0 +1,153 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 ArialMT;}
+{\colortbl;\red255\green255\blue255;\red26\green26\blue26;\red255\green255\blue255;\red16\green60\blue192;
+\red117\green117\blue117;}
+{\*\expandedcolortbl;;\cssrgb\c13333\c13333\c13333;\cssrgb\c100000\c100000\c100000;\cssrgb\c6667\c33333\c80000;
+\cssrgb\c53333\c53333\c53333;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs26 \cf2 \cb3 \expnd0\expndtw0\kerning0
+// Initialize an array to store the processed output\cb1 \
+\cb3 const outputData = [];\cb1 \
+\
+\cb3 for (const item of $input.all()) \{\cb1 \
+\cb3 \'a0 // Access the content of the "message" property\cb1 \
+\cb3 \'a0 const openAIResponse = item.json.message?.content;\cb1 \
+\
+\cb3 \'a0 if (openAIResponse) \{\cb1 \
+\cb3 \'a0 \'a0 // Regex patterns to extract date, time, location, and description\cb1 \
+\cb3 \'a0 \'a0 const datePattern = /Date:\\s([a-zA-Z]+\\s\\d\{1,2\}(?:st|nd|rd|th)?)\\n/; // Allow date suffixes (st, nd, rd, th)\cb1 \
+\cb3 \'a0 \'a0 const timePattern = /Time:\\s([\\d\\w\\s]+)\\s(to)\\s([\\d\\w\\s]+)/;\cb1 \
+\cb3 \'a0 \'a0 const locationPattern = /Location:\\s([\\s\\S]+?)\\n/; // Capture everything after "Location:" until newline\cb1 \
+\cb3 \'a0 \'a0 const descriptionPattern = /Description:\\s([\\s\\S]+)?/; // Capture everything after "Description:"\cb1 \
+\
+\cb3 \'a0 \'a0 // Extract event details using regex\cb1 \
+\cb3 \'a0 \'a0 const dateMatch = openAIResponse.match(datePattern);\cb1 \
+\cb3 \'a0 \'a0 const timeMatch = openAIResponse.match(timePattern);\cb1 \
+\cb3 \'a0 \'a0 const locationMatch = openAIResponse.match(locationPattern);\cb1 \
+\cb3 \'a0 \'a0 const descriptionMatch = openAIResponse.match(descriptionPattern);\cb1 \
+\
+\cb3 \'a0 \'a0 // Parse extracted data with default fallback values\cb1 \
+\cb3 \'a0 \'a0 const date = dateMatch ? dateMatch[1].trim() : 'Unknown Date';\cb1 \
+\cb3 \'a0 \'a0 const startTime = timeMatch ? timeMatch[1].trim() : 'Unknown Start Time';\cb1 \
+\cb3 \'a0 \'a0 const endTime = timeMatch ? timeMatch[3].trim() : 'Unknown End Time';\cb1 \
+\cb3 \'a0 \'a0 const location = locationMatch ? locationMatch[1].trim() : 'Unknown Location';\cb1 \
+\cb3 \'a0 \'a0 const description = descriptionMatch ? descriptionMatch[1]?.trim() : ''; \'a0// Longer description will be created below\cb1 \
+\
+\cb3 \'a0 \'a0 // Convert the extracted date (e.g., "January 27th") into a valid format\cb1 \
+\cb3 \'a0 \'a0 const dateParts = date.split(' '); // ["January", "27th"]\cb1 \
+\cb3 \'a0 \'a0 const day = dateParts[1].replace(/(st|nd|rd|th)/, ''); // Remove any suffix (e.g., "27th" becomes "27")\cb1 \
+\cb3 \'a0 \'a0 const monthName = dateParts[0]; // "January"\cb1 \
+\
+\cb3 \'a0 \'a0 // Convert the month name to a month number\cb1 \
+\cb3 \'a0 \'a0 const monthMap = \{\cb1 \
+\cb3 \'a0 \'a0 \'a0 January: '01',\cb1 \
+\cb3 \'a0 \'a0 \'a0 February: '02',\cb1 \
+\cb3 \'a0 \'a0 \'a0 March: '03',\cb1 \
+\cb3 \'a0 \'a0 \'a0 April: '04',\cb1 \
+\cb3 \'a0 \'a0 \'a0 May: '05',\cb1 \
+\cb3 \'a0 \'a0 \'a0 June: '06',\cb1 \
+\cb3 \'a0 \'a0 \'a0 July: '07',\cb1 \
+\cb3 \'a0 \'a0 \'a0 August: '08',\cb1 \
+\cb3 \'a0 \'a0 \'a0 September: '09',\cb1 \
+\cb3 \'a0 \'a0 \'a0 October: '10',\cb1 \
+\cb3 \'a0 \'a0 \'a0 November: '11',\cb1 \
+\cb3 \'a0 \'a0 \'a0 December: '12'\cb1 \
+\cb3 \'a0 \'a0 \};\cb1 \
+\
+\cb3 \'a0 \'a0 const month = monthMap[monthName]; // Get the month number, e.g., "01" for January\cb1 \
+\
+\cb3 \'a0 \'a0 // Construct the full date in the format YYYY-MM-DD\cb1 \
+\cb3 \'a0 \'a0 const formattedDate = `2025-$\{month\}-$\{day\}`; // Example: "2025-01-27"\cb1 \
+\
+\cb3 \'a0 \'a0 // Convert times to 24-hour format\cb1 \
+\cb3 \'a0 \'a0 const startFormatted = convertTo24Hour(startTime);\cb1 \
+\cb3 \'a0 \'a0 const endFormatted = convertTo24Hour(endTime);\cb1 \
+\
+\cb3 \'a0 \'a0 // Build the start and end times in UTC and local time format\cb1 \
+\cb3 \'a0 \'a0 const startDateTimeUTC = `$\{formattedDate\}T$\{startFormatted\}:00Z`; // UTC time format\cb1 \
+\cb3 \'a0 \'a0 const endDateTimeUTC = `$\{formattedDate\}T$\{endFormatted\}:00Z`; // UTC time format\cb1 \
+\
+\cb3 \'a0 \'a0 const startDateTimeLocal = `$\{formattedDate\}T$\{startFormatted\}:00-05:00`; // Local time\cb1 \
+\cb3 \'a0 \'a0 const endDateTimeLocal = `$\{formattedDate\}T$\{endFormatted\}:00-05:00`; // Local time\cb1 \
+\
+\cb3 \'a0 \'a0 // Create event data object for Google Calendar\cb1 \
+\cb3 \'a0 \'a0 const eventData = \{\cb1 \
+\cb3 \'a0 \'a0 \'a0 start: \{\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 dateTime: startDateTimeLocal, \'a0// Local time\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 timeZone: 'America/New_York'\cb1 \
+\cb3 \'a0 \'a0 \'a0 \},\cb1 \
+\cb3 \'a0 \'a0 \'a0 end: \{\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 dateTime: endDateTimeLocal, \'a0 \'a0// Local time\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 timeZone: 'America/New_York'\cb1 \
+\cb3 \'a0 \'a0 \'a0 \},\cb1 \
+\cb3 \'a0 \'a0 \'a0 description: description,\cb1 \
+\cb3 \'a0 \'a0 \'a0 location: location,\cb1 \
+\cb3 \'a0 \'a0 \'a0 summary: `Event on $\{formattedDate\}`,\cb1 \
+\cb3 \'a0 \'a0 \'a0 startUTC: startDateTimeUTC, \'a0 \'a0 \'a0// UTC time\cb1 \
+\cb3 \'a0 \'a0 \'a0 endUTC: endDateTimeUTC \'a0 \'a0 \'a0 \'a0 \'a0// UTC time\cb1 \
+\cb3 \'a0 \'a0 \};\cb1 \
+\
+\cb3 \'a0 \'a0 // Construct a longer description (a combination of summary, time, and location)\cb1 \
+\cb3 \'a0 \'a0 const detailedDescription = `$\{eventData.summary\}\\nStart Time: $\{startTime\}\\nEnd Time: $\{endTime\}\\nLocation: $\{location\}`;\cb1 \
+\cb3 \'a0 \'a0 const descriptionWithDetails = description || detailedDescription;\cb1 \
+\
+\cb3 \'a0 \'a0 // Push the formatted event data into the output array for Google Calendar\cb1 \
+\cb3 \'a0 \'a0 outputData.push(\{\cb1 \
+\cb3 \'a0 \'a0 \'a0 kind: "calendar#event",\cb1 \
+\cb3 \'a0 \'a0 \'a0 etag: `"3474783211316000"`, // Example ETag, typically generated by Google Calendar\cb1 \
+\cb3 \'a0 \'a0 \'a0 id: `event_id_$\{Math.random().toString(36).substring(2, 15)\}`, // Random event ID for now\cb1 \
+\cb3 \'a0 \'a0 \'a0 status: "confirmed",\cb1 \
+\cb3 \'a0 \'a0 \'a0 htmlLink: `{\field{\*\fldinst{HYPERLINK "https://www.google.com/calendar/event?eid=$%7BMath.random().toString(36).substring(2"}}{\fldrslt \cf4 \ul \ulc4 https://www.google.com/calendar/event?eid=$\{Math.random().toString(36).substring(2}}, 15)\}`,\cb1 \
+\cb3 \'a0 \'a0 \'a0 created: new Date().toISOString(),\cb1 \
+\cb3 \'a0 \'a0 \'a0 updated: new Date().toISOString(),\cb1 \
+\cb3 \'a0 \'a0 \'a0 creator: \{\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 email: "{\field{\*\fldinst{HYPERLINK "mailto:clarionnorth@gmail.com"}}{\fldrslt \cf4 \ul \ulc4 clarionnorth@gmail.com}}",\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 self: true\cb1 \
+\cb3 \'a0 \'a0 \'a0 \},\cb1 \
+\cb3 \'a0 \'a0 \'a0 organizer: \{\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 email: "{\field{\*\fldinst{HYPERLINK "mailto:clarionnorth@gmail.com"}}{\fldrslt \cf4 \ul \ulc4 clarionnorth@gmail.com}}",\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 self: true\cb1 \
+\cb3 \'a0 \'a0 \'a0 \},\cb1 \
+\cb3 \'a0 \'a0 \'a0 start: \{\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 dateTime: eventData.start.dateTime,\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 timeZone: eventData.start.timeZone\cb1 \
+\cb3 \'a0 \'a0 \'a0 \},\cb1 \
+\cb3 \'a0 \'a0 \'a0 end: \{\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 dateTime: eventData.end.dateTime,\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 timeZone: eventData.end.timeZone\cb1 \
+\cb3 \'a0 \'a0 \'a0 \},\cb1 \
+\cb3 \'a0 \'a0 \'a0 iCalUID: `$\{Math.random().toString(36).substring(2, 15)\}@{\field{\*\fldinst{HYPERLINK "http://google.com/"}}{\fldrslt \cf4 \ul \ulc4 google.com}}`,\cb1 \
+\cb3 \'a0 \'a0 \'a0 sequence: 0,\cb1 \
+\cb3 \'a0 \'a0 \'a0 reminders: \{\cb1 \
+\cb3 \'a0 \'a0 \'a0 \'a0 useDefault: true\cb1 \
+\cb3 \'a0 \'a0 \'a0 \},\cb1 \
+\cb3 \'a0 \'a0 \'a0 eventType: "default",\cb1 \
+\cb3 \'a0 \'a0 \'a0 // Add explicit tags for summary, description, and location\cb1 \
+\cb3 \'a0 \'a0 \'a0 summary: eventData.summary,\cb1 \
+\cb3 \'a0 \'a0 \'a0 description: descriptionWithDetails,\cb1 \
+\cb3 \'a0 \'a0 \'a0 location: eventData.location\cb1 \
+\cb3 \'a0 \'a0 \});\cb1 \
+\cb3 \'a0 \}\cb1 \
+\cb3 \}\cb1 \
+\
+\cb3 // Return the processed output\cb1 \
+\cb3 return outputData;\cb1 \
+\
+\cb3 // Function to convert 12-hour time (e.g., '4pm') to 24-hour format (e.g., '16:00')\cb1 \
+\cb3 function convertTo24Hour(time) \{\cb1 \
+\cb3 \'a0 const timeParts = time.match(/(\\d+)(am|pm)/i);\cb1 \
+\cb3 \'a0 if (!timeParts) return '00:00'; \'a0// Default fallback if no valid time format found\cb1 \
+\
+\cb3 \'a0 let hours = parseInt(timeParts[1], 10);\cb1 \
+\cb3 \'a0 const ampm = timeParts[2].toLowerCase();\cb1 \
+\
+\cb3 \'a0 // Convert to 24-hour format\cb1 \
+\cb3 \'a0 if (ampm === 'pm' && hours !== 12) hours += 12;\cb1 \
+\cb3 \'a0 if (ampm === 'am' && hours === 12) hours = 0;\cb1 \
+\
+\cb3 \'a0 return hours.toString().padStart(2, '0'); \'a0// Return time as HH format (e.g., '16' for 4pm)\cb1 \
+\cb3 \}\cf5 \cb1 \
+}
